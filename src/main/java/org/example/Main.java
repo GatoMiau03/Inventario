@@ -1,5 +1,6 @@
 package org.example;
-
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -72,6 +73,26 @@ public class Main {
         }
     }
 
+    public void cargarInventarioDesdeCSV() {
+        String archivoCSV = "productos.csv";
+        String linea;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivoCSV))) {
+            while ((linea = reader.readLine()) != null) {
+                String[] campos = linea.split(",");
+                if (campos.length == 3) {
+                    String nombre = campos[0];
+                    double precio = Double.parseDouble(campos[1]);
+                    String informacionAdicional = campos[2];
+                    inventario.put(nombre.toLowerCase(), new Producto(nombre, precio, informacionAdicional));
+                }
+            }
+            System.out.println("Inventario cargado desde el archivo CSV.");
+        } catch (IOException | NumberFormatException e) {
+            System.out.println("Error al cargar el inventario desde el archivo CSV.");
+        }
+    }
+
     class Producto {
         String nombre;
         double precio;
@@ -87,6 +108,8 @@ public class Main {
     public static void main(String[] args) {
         Main admin = new Main();
         Scanner scanner = new Scanner(System.in);
+        admin.cargarInventarioDesdeCSV();
+
         int opcion;
 
         do {
