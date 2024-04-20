@@ -1,18 +1,31 @@
 package org.example;
-import java.util.HashMap; // Este almacena las claves
-import java.util.Map; //Lo utilizare para crear una coleccion de clave-valor para que cada elemento tenga un valor propio, en este caso son los productos
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
-    Map<String, Producto> inventario;
+    private Map<String, Producto> inventario;
 
     public Main() {
         inventario = new HashMap<>();
     }
 
     public void agregarProducto(String nombre, double precio, String informacionAdicional) {
-        Producto producto = new Producto(nombre, precio, informacionAdicional);
-        inventario.put(nombre, producto);
+        if (!existeProducto(nombre.toLowerCase())) {
+            Producto producto = new Producto(nombre, precio, informacionAdicional);
+            inventario.put(nombre.toLowerCase(), producto);
+            guardarProductoEnCSV(producto);
+            System.out.println("Producto agregado con éxito al inventario.");
+        } else {
+            System.out.println("Error: Ya existe un producto con el mismo nombre en el inventario.");
+        }
+    }
+
+    public boolean existeProducto(String nombre) {
+        return inventario.containsKey(nombre);
     }
 
     public void mostrarInventario() {
@@ -23,41 +36,40 @@ public class Main {
     }
 
     public void menuIngresoProducto(Scanner scanner) {
-        try {
-            System.out.println("Ingrese el nombre del producto:");
-            String nombre = scanner.nextLine();
-            double precio = obtenerPrecioValido(scanner);
-            scanner.nextLine();
-            System.out.println("Ingrese información adicional del producto:");
-            String informacionAdicional = scanner.nextLine();
+        System.out.println("Ingrese el nombre del producto:");
+        String nombre = scanner.nextLine();
+        double precio = obtenerPrecioValido(scanner);
+        System.out.println("Ingrese información adicional del producto:");
+        String informacionAdicional = scanner.nextLine();
 
-            agregarProducto(nombre, precio, informacionAdicional);
-            System.out.println("Producto agregado con éxito al inventario.");
-        } catch (NumberFormatException e) {
-            System.out.println("Error. El precio debe ser un número válido.");
-        }
+        agregarProducto(nombre, precio, informacionAdicional);
     }
-    public boolean esNumero(String str) {
-        try {
-            Double.parseDouble(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
+
     public double obtenerPrecioValido(Scanner scanner) {
         double precio;
         while (true) {
             System.out.println("Ingrese el precio del producto:");
-            String input = scanner.nextLine();
-            if (esNumero(input)) {
-                precio = Double.parseDouble(input);
+            try {
+                precio = Double.parseDouble(scanner.nextLine());
                 break;
-            } else {
-                System.out.println("Precio inválido. Por favor, ingrese un número válido.");
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Por favor, ingrese un número válido como precio.");
             }
         }
         return precio;
+    }
+
+    public void guardarProductoEnCSV(Producto producto) {
+        try (FileWriter writer = new FileWriter("productos.csv", true)) {
+            writer.append(producto.nombre)
+                    .append(",")
+                    .append(String.valueOf(producto.precio))
+                    .append(",")
+                    .append(producto.informacionAdicional)
+                    .append("\n");
+        } catch (IOException e) {
+            System.out.println("Error al guardar el producto en el archivo CSV.");
+        }
     }
 
     class Producto {
@@ -66,7 +78,7 @@ public class Main {
         String informacionAdicional;
 
         public Producto(String nombre, double precio, String informacionAdicional) {
-            this.nombre = nombre;
+            this.nombre = nombre.toLowerCase();
             this.precio = precio;
             this.informacionAdicional = informacionAdicional;
         }
@@ -76,6 +88,7 @@ public class Main {
         Main admin = new Main();
         Scanner scanner = new Scanner(System.in);
         int opcion;
+
         do {
             System.out.println("----- Menú de la Frutería -----");
             System.out.println("1. Mostrar inventario");
@@ -83,29 +96,40 @@ public class Main {
             System.out.println("3. Salir");
             System.out.println("Seleccione una opción:");
 
-            try {
-                opcion = Integer.parseInt(scanner.nextLine());
+            opcion = obtenerOpcionValida(scanner);
 
-                switch (opcion) {
-                    case 1:
-                        admin.mostrarInventario();
-                        break;
-                    case 2:
-                        admin.menuIngresoProducto(scanner);
-                        break;
-                    case 3:
-                        System.out.println("Saliendo del programa...");
-                        break;
-                    default:
-                        System.out.println("Opción inválida. Por favor, seleccione una opción válida.");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Error. Debe ingresar un número válido como opción.");
-                opcion = 0;
+            switch (opcion) {
+                case 1:
+                    admin.mostrarInventario();
+                    break;
+                case 2:
+                    admin.menuIngresoProducto(scanner);
+                    break;
+                case 3:
+                    System.out.println("Saliendo del programa...");
+                    break;
+                default:
+                    System.out.println("Opción inválida. Por favor, seleccione una opción válida.");
             }
-
         } while (opcion != 3);
 
         scanner.close();
+    }
+
+    public static int obtenerOpcionValida(Scanner scanner) {
+        int opcion;
+        while (true) {
+            try {
+                opcion = Integer.parseInt(scanner.nextLine());
+                if (opcion >= 1 && opcion <= 3) {
+                    break;
+                } else {
+                    System.out.println("Error: Por favor, ingrese una opción válida.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Por favor, ingrese un número válido como opción.");
+            }
+        }
+        return opcion;
     }
 }
