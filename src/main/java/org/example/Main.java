@@ -1,11 +1,7 @@
 package org.example;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class Main {
     private Map<String, Producto> inventario;
@@ -25,6 +21,15 @@ public class Main {
         }
     }
 
+    public void eliminarProducto(String nombre) {
+        if (existeProducto(nombre.toLowerCase())) {
+            inventario.remove(nombre.toLowerCase());
+            System.out.println("Producto eliminado con éxito del inventario.");
+        } else {
+            System.out.println("Error: No existe un producto con ese nombre en el inventario.");
+        }
+    }
+
     public boolean existeProducto(String nombre) {
         return inventario.containsKey(nombre);
     }
@@ -32,7 +37,7 @@ public class Main {
     public void mostrarInventario() {
         System.out.println("Inventario de la frutería:");
         for (Map.Entry<String, Producto> entry : inventario.entrySet()) {
-            System.out.println("Nombre: " + entry.getKey() + ", Precio: $" + entry.getValue().precio + ", Información Adicional: " + entry.getValue().informacionAdicional);
+            System.out.println("Nombre: " + entry.getKey() + ", Precio: $" + entry.getValue().precio + ", Información Adicional: " + entry.getValue().informacionAdicional + ", Fecha de ingreso: " + entry.getValue().fechaIngreso);
         }
     }
 
@@ -67,6 +72,8 @@ public class Main {
                     .append(String.valueOf(producto.precio))
                     .append(",")
                     .append(producto.informacionAdicional)
+                    .append(",")
+                    .append(producto.fechaIngreso)
                     .append("\n");
         } catch (IOException e) {
             System.out.println("Error al guardar el producto en el archivo CSV.");
@@ -80,11 +87,12 @@ public class Main {
         try (BufferedReader reader = new BufferedReader(new FileReader(archivoCSV))) {
             while ((linea = reader.readLine()) != null) {
                 String[] campos = linea.split(",");
-                if (campos.length == 3) {
+                if (campos.length == 4) {
                     String nombre = campos[0];
                     double precio = Double.parseDouble(campos[1]);
                     String informacionAdicional = campos[2];
-                    inventario.put(nombre.toLowerCase(), new Producto(nombre, precio, informacionAdicional));
+                    String fechaIngreso = campos[3];
+                    inventario.put(nombre.toLowerCase(), new Producto(nombre, precio, informacionAdicional, fechaIngreso));
                 }
             }
             System.out.println("Inventario cargado desde el archivo CSV.");
@@ -97,11 +105,26 @@ public class Main {
         String nombre;
         double precio;
         String informacionAdicional;
+        String fechaIngreso;
 
         public Producto(String nombre, double precio, String informacionAdicional) {
             this.nombre = nombre.toLowerCase();
             this.precio = precio;
             this.informacionAdicional = informacionAdicional;
+            this.fechaIngreso = obtenerFechaActual();
+        }
+
+        public Producto(String nombre, double precio, String informacionAdicional, String fechaIngreso) {
+            this.nombre = nombre.toLowerCase();
+            this.precio = precio;
+            this.informacionAdicional = informacionAdicional;
+            this.fechaIngreso = fechaIngreso;
+        }
+
+        private String obtenerFechaActual() {
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date date = new Date();
+            return formatter.format(date);
         }
     }
 
@@ -116,7 +139,8 @@ public class Main {
             System.out.println("----- Menú de la Frutería -----");
             System.out.println("1. Mostrar inventario");
             System.out.println("2. Agregar producto");
-            System.out.println("3. Salir");
+            System.out.println("3. Eliminar producto");
+            System.out.println("4. Salir");
             System.out.println("Seleccione una opción:");
 
             opcion = obtenerOpcionValida(scanner);
@@ -129,12 +153,17 @@ public class Main {
                     admin.menuIngresoProducto(scanner);
                     break;
                 case 3:
+                    System.out.println("Ingrese el nombre del producto a eliminar:");
+                    String nombreProductoEliminar = scanner.nextLine();
+                    admin.eliminarProducto(nombreProductoEliminar);
+                    break;
+                case 4:
                     System.out.println("Saliendo del programa...");
                     break;
                 default:
                     System.out.println("Opción inválida. Por favor, seleccione una opción válida.");
             }
-        } while (opcion != 3);
+        } while (opcion != 4);
 
         scanner.close();
     }
@@ -144,7 +173,7 @@ public class Main {
         while (true) {
             try {
                 opcion = Integer.parseInt(scanner.nextLine());
-                if (opcion >= 1 && opcion <= 3) {
+                if (opcion >= 1 && opcion <= 4) {
                     break;
                 } else {
                     System.out.println("Error: Por favor, ingrese una opción válida.");
