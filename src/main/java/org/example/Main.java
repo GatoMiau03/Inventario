@@ -5,6 +5,7 @@ import java.util.*;
 
 public class Main {
     private Map<String, Producto> inventario;
+    private Usuario usuarioActual;
 
     public Main() {
         inventario = new HashMap<>();
@@ -101,69 +102,75 @@ public class Main {
         }
     }
 
-    class Producto {
-        String nombre;
-        double precio;
-        String informacionAdicional;
-        String fechaIngreso;
+    public void iniciarSesion(Scanner scanner) {
+        System.out.println("Ingrese su nombre de usuario:");
+        String nombreUsuario = scanner.nextLine();
+        System.out.println("Ingrese su contraseña:");
+        String contrasena = scanner.nextLine();
 
-        public Producto(String nombre, double precio, String informacionAdicional) {
-            this.nombre = nombre.toLowerCase();
-            this.precio = precio;
-            this.informacionAdicional = informacionAdicional;
-            this.fechaIngreso = obtenerFechaActual();
+        if (nombreUsuario.equals("admin") && contrasena.equals("admin")) {
+            usuarioActual = new Usuario(nombreUsuario, Rol.ADMINISTRADOR);
+            System.out.println("Sesión iniciada como administrador.");
+        } else if (nombreUsuario.equals("vendedor") && contrasena.equals("vendedor")) {
+            usuarioActual = new Usuario(nombreUsuario, Rol.VENDEDOR);
+            System.out.println("Sesión iniciada como vendedor.");
+        } else {
+            System.out.println("Usuario o contraseña incorrectos.");
         }
+    }
 
-        public Producto(String nombre, double precio, String informacionAdicional, String fechaIngreso) {
-            this.nombre = nombre.toLowerCase();
-            this.precio = precio;
-            this.informacionAdicional = informacionAdicional;
-            this.fechaIngreso = fechaIngreso;
-        }
-
-        private String obtenerFechaActual() {
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            Date date = new Date();
-            return formatter.format(date);
-        }
+    public void cerrarSesion() {
+        usuarioActual = null;
+        System.out.println("Sesión cerrada.");
     }
 
     public static void main(String[] args) {
         Main admin = new Main();
         Scanner scanner = new Scanner(System.in);
         admin.cargarInventarioDesdeCSV();
+        admin.iniciarSesion(scanner);
 
-        int opcion;
+        if (admin.usuarioActual != null) {
+            int opcion;
 
-        do {
-            System.out.println("----- Menú de la Frutería -----");
-            System.out.println("1. Mostrar inventario");
-            System.out.println("2. Agregar producto");
-            System.out.println("3. Eliminar producto");
-            System.out.println("4. Salir");
-            System.out.println("Seleccione una opción:");
+            do {
+                System.out.println("----- Menú de la Frutería -----");
+                System.out.println("1. Mostrar inventario");
+                System.out.println("2. Agregar producto");
+                System.out.println("3. Eliminar producto");
+                System.out.println("4. Cerrar sesión");
+                System.out.println("Seleccione una opción:");
 
-            opcion = obtenerOpcionValida(scanner);
+                opcion = obtenerOpcionValida(scanner);
 
-            switch (opcion) {
-                case 1:
-                    admin.mostrarInventario();
-                    break;
-                case 2:
-                    admin.menuIngresoProducto(scanner);
-                    break;
-                case 3:
-                    System.out.println("Ingrese el nombre del producto a eliminar:");
-                    String nombreProductoEliminar = scanner.nextLine();
-                    admin.eliminarProducto(nombreProductoEliminar);
-                    break;
-                case 4:
-                    System.out.println("Saliendo del programa...");
-                    break;
-                default:
-                    System.out.println("Opción inválida. Por favor, seleccione una opción válida.");
-            }
-        } while (opcion != 4);
+                switch (opcion) {
+                    case 1:
+                        admin.mostrarInventario();
+                        break;
+                    case 2:
+                        if (admin.usuarioActual.getRol() == Rol.ADMINISTRADOR) {
+                            admin.menuIngresoProducto(scanner);
+                        } else {
+                            System.out.println("No tienes permiso para realizar esta acción.");
+                        }
+                        break;
+                    case 3:
+                        if (admin.usuarioActual.getRol() == Rol.ADMINISTRADOR) {
+                            System.out.println("Ingrese el nombre del producto a eliminar:");
+                            String nombreProductoEliminar = scanner.nextLine();
+                            admin.eliminarProducto(nombreProductoEliminar);
+                        } else {
+                            System.out.println("No tienes permiso para realizar esta acción.");
+                        }
+                        break;
+                    case 4:
+                        admin.cerrarSesion();
+                        break;
+                    default:
+                        System.out.println("Opción inválida. Por favor, seleccione una opción válida.");
+                }
+            } while (opcion != 4);
+        }
 
         scanner.close();
     }
@@ -183,5 +190,51 @@ public class Main {
             }
         }
         return opcion;
+    }
+}
+
+class Usuario {
+    private String nombreUsuario;
+    private Rol rol;
+
+    public Usuario(String nombreUsuario, Rol rol) {
+        this.nombreUsuario = nombreUsuario;
+        this.rol = rol;
+    }
+
+    public Rol getRol() {
+        return rol;
+    }
+}
+
+enum Rol {
+    ADMINISTRADOR,
+    VENDEDOR
+}
+
+class Producto {
+    String nombre;
+    double precio;
+    String informacionAdicional;
+    String fechaIngreso;
+
+    public Producto(String nombre, double precio, String informacionAdicional) {
+        this.nombre = nombre.toLowerCase();
+        this.precio = precio;
+        this.informacionAdicional = informacionAdicional;
+        this.fechaIngreso = obtenerFechaActual();
+    }
+
+    public Producto(String nombre, double precio, String informacionAdicional, String fechaIngreso) {
+        this.nombre = nombre.toLowerCase();
+        this.precio = precio;
+        this.informacionAdicional = informacionAdicional;
+        this.fechaIngreso = fechaIngreso;
+    }
+
+    private String obtenerFechaActual() {
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        Date date = new Date();
+        return formatter.format(date);
     }
 }
